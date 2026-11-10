@@ -1,0 +1,720 @@
+<canvas entry="index.html">
+<file path="index.html">
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Trắc nghiệm Nghiệp vụ Ngoại thương (50 câu)</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+    body {
+      font-family: 'Inter', sans-serif;
+    }
+    .custom-scrollbar::-webkit-scrollbar {
+      width: 6px;
+    }
+    .custom-scrollbar::-webkit-scrollbar-track {
+      background: #f1f1f1;
+    }
+    .custom-scrollbar::-webkit-scrollbar-thumb {
+      background: #cbd5e1;
+      border-radius: 4px;
+    }
+    .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+      background: #94a3b8;
+    }
+  </style>
+</head>
+<body class="bg-slate-50 text-slate-800 min-h-screen flex flex-col">
+
+  <!-- Header -->
+  <header class="bg-indigo-900 text-white shadow-lg sticky top-0 z-30">
+    <div class="max-w-7xl mx-auto px-4 py-3 flex justify-between items-center">
+      <div class="flex items-center space-x-3">
+        <i class="fa-solid fa-graduation-cap text-2xl text-amber-400"></i>
+        <div>
+          <h1 class="font-bold text-lg leading-tight">Nghiệp Vụ Ngoại Thương</h1>
+          <p class="text-xs text-indigo-200">Bài kiểm tra trắc nghiệm 50 câu (60 phút)</p>
+        </div>
+      </div>
+      
+      <!-- Timer & Actions -->
+      <div class="flex items-center space-x-4">
+        <div id="timerContainer" class="flex items-center space-x-2 bg-indigo-950 px-3 py-1.5 rounded-lg border border-indigo-700">
+          <i class="fa-regular fa-clock text-amber-400 animate-pulse"></i>
+          <span id="timer" class="font-mono font-bold text-lg text-amber-400">60:00</span>
+        </div>
+        <button id="btnSubmitTop" onclick="confirmSubmit()" class="bg-amber-500 hover:bg-amber-600 text-slate-900 font-semibold px-4 py-1.5 rounded-lg text-sm transition shadow">
+          Nộp bài
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- Main Content Layout -->
+  <div class="max-w-7xl mx-auto px-4 py-6 flex-1 w-full flex flex-col md:flex-row gap-6">
+    
+    <!-- Left Panel: Question Display Area -->
+    <main class="flex-1 flex flex-col bg-white rounded-xl shadow-md border border-slate-200 overflow-hidden">
+      
+      <!-- Top Navigation within Question Card -->
+      <div class="bg-slate-100 px-6 py-4 border-b border-slate-200 flex justify-between items-center">
+        <span id="questionBadge" class="bg-indigo-100 text-indigo-800 font-bold px-3 py-1 rounded-full text-sm">
+          Câu 1 / 50
+        </span>
+        <div class="flex items-center space-x-2">
+          <button id="btnBookmark" onclick="toggleBookmark()" class="text-slate-400 hover:text-amber-500 text-sm font-medium flex items-center gap-1 transition px-2 py-1 rounded">
+            <i class="fa-regular fa-bookmark"></i> <span>Xem lại sau</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- Question Text & Options -->
+      <div class="p-6 flex-1 overflow-y-auto custom-scrollbar" id="questionBox">
+        <h2 id="questionText" class="text-lg md:text-xl font-semibold text-slate-900 mb-6 leading-relaxed">
+          Đang tải câu hỏi...
+        </h2>
+
+        <div id="optionsContainer" class="space-y-3">
+          <!-- Options rendered via JS -->
+        </div>
+
+        <!-- Result Explanation Box (Shows after Submission) -->
+        <div id="explanationBox" class="hidden mt-6 p-4 rounded-xl border bg-slate-50">
+          <h4 class="font-bold text-sm mb-1 flex items-center gap-2" id="explanationTitle">
+            <i class="fa-solid fa-circle-info"></i> Giải thích đáp án
+          </h4>
+          <p id="explanationText" class="text-sm text-slate-700 leading-relaxed"></p>
+        </div>
+      </div>
+
+      <!-- Bottom Nav Buttons -->
+      <div class="bg-slate-50 px-6 py-4 border-t border-slate-200 flex justify-between items-center">
+        <button id="btnPrev" onclick="navigateQuestion(-1)" class="px-4 py-2 bg-slate-200 hover:bg-slate-300 text-slate-700 font-medium rounded-lg text-sm transition flex items-center gap-2">
+          <i class="fa-solid fa-arrow-left"></i> Câu trước
+        </button>
+        <button id="btnNext" onclick="navigateQuestion(1)" class="px-5 py-2 bg-indigo-600 hover:bg-indigo-700 text-white font-medium rounded-lg text-sm transition flex items-center gap-2">
+          Câu tiếp <i class="fa-solid fa-arrow-right"></i>
+        </button>
+      </div>
+    </main>
+
+    <!-- Right Panel: Navigator & Status Grid -->
+    <aside class="w-full md:w-80 flex flex-col gap-4">
+      
+      <!-- Statistics Card -->
+      <div class="bg-white p-4 rounded-xl shadow-md border border-slate-200">
+        <h3 class="font-bold text-slate-800 text-sm uppercase tracking-wider mb-3">Tiến độ làm bài</h3>
+        <div class="grid grid-cols-2 gap-3 text-center">
+          <div class="bg-indigo-50 p-3 rounded-lg border border-indigo-100">
+            <span id="statAnswered" class="block font-bold text-xl text-indigo-700">0</span>
+            <span class="text-xs text-slate-500">Đã trả lời</span>
+          </div>
+          <div class="bg-slate-50 p-3 rounded-lg border border-slate-200">
+            <span id="statRemaining" class="block font-bold text-xl text-slate-700">50</span>
+            <span class="text-xs text-slate-500">Còn lại</span>
+          </div>
+        </div>
+        <div id="resultScoreCard" class="hidden mt-3 p-3 bg-amber-50 rounded-lg border border-amber-200 text-center">
+          <span class="text-xs text-amber-800 font-medium">Kết quả cuối cùng</span>
+          <div id="finalScore" class="text-2xl font-black text-amber-600">0 / 50</div>
+        </div>
+      </div>
+
+      <!-- Question Palette -->
+      <div class="bg-white p-4 rounded-xl shadow-md border border-slate-200 flex-1 flex flex-col">
+        <div class="flex justify-between items-center mb-3">
+          <h3 class="font-bold text-slate-800 text-sm uppercase tracking-wider">Danh sách 50 câu</h3>
+          <span class="text-xs text-slate-400">Click để chuyển</span>
+        </div>
+
+        <!-- Legend -->
+        <div class="flex flex-wrap gap-2 text-xs text-slate-600 mb-3 pb-3 border-b border-slate-100">
+          <div class="flex items-center gap-1"><span class="w-3 h-3 bg-slate-200 rounded-sm border"></span> Chưa làm</div>
+          <div class="flex items-center gap-1"><span class="w-3 h-3 bg-indigo-600 rounded-sm"></span> Đã làm</div>
+          <div class="flex items-center gap-1"><span class="w-3 h-3 bg-amber-400 rounded-sm"></span> Xem lại</div>
+        </div>
+
+        <!-- 50 Grid Buttons -->
+        <div id="questionsGrid" class="grid grid-cols-5 gap-2 overflow-y-auto max-h-80 custom-scrollbar pr-1">
+          <!-- Rendered via JS -->
+        </div>
+
+        <button id="btnSubmitBottom" onclick="confirmSubmit()" class="mt-4 w-full py-2.5 bg-indigo-900 hover:bg-indigo-950 text-white font-semibold rounded-lg text-sm shadow transition">
+          Nộp bài hoàn thành
+        </button>
+      </div>
+
+    </aside>
+  </div>
+
+  <!-- Modal Confirm Submit -->
+  <div id="submitModal" class="hidden fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+    <div class="bg-white rounded-xl shadow-2xl p-6 max-w-sm w-full text-center">
+      <div class="w-12 h-12 bg-indigo-100 text-indigo-600 rounded-full flex items-center justify-center mx-auto mb-4 text-xl">
+        <i class="fa-solid fa-paper-plane"></i>
+      </div>
+      <h3 class="font-bold text-slate-900 text-lg mb-2">Xác nhận nộp bài?</h3>
+      <p id="modalAnswerCount" class="text-slate-600 text-sm mb-6">Bạn đã làm được 0 / 50 câu hỏi.</p>
+      <div class="flex gap-3">
+        <button onclick="closeSubmitModal()" class="flex-1 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 font-medium rounded-lg text-sm transition">
+          Làm tiếp
+        </button>
+        <button onclick="submitQuiz()" class="flex-1 py-2 bg-indigo-600 hover:bg-indigo-700 text-white font-semibold rounded-lg text-sm shadow transition">
+          Nộp bài ngay
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // 50 Questions derived strictly from PDF content
+    const quizData = [
+      {
+        q: "Theo Incoterms 2010 và 2020, điều kiện thương mại nào thể hiện nghĩa vụ tối thiểu của người bán?",
+        options: ["FCA", "EXW", "FOB", "DDP"],
+        answer: 1,
+        exp: "EXW (Ex Works - Giao tại xưởng) quy định người bán chỉ cần đặt hàng hóa dưới quyền định đoạt của người mua tại cơ sở của người bán mà không chịu trách nhiệm bốc hàng hay làm thủ tục xuất khẩu."
+      },
+      {
+        q: "Trong các điều kiện Incoterms, điều kiện nào thể hiện nghĩa vụ tối đa của người bán?",
+        options: ["CIF", "DAP", "DDP", "DPU"],
+        answer: 2,
+        exp: "DDP (Delivered Duty Paid) thể hiện nghĩa vụ tối đa của người bán khi người bán phải làm thủ tục thông quan cả xuất khẩu lẫn nhập khẩu và trả thuế nhập khẩu."
+      },
+      {
+        q: "Incoterms 2020 đã bổ sung điều kiện mới nào để thay thế cho điều kiện DAT trong Incoterms 2010?",
+        options: ["DAP", "DPU", "DDP", "CPT"],
+        answer: 1,
+        exp: "DPU (Delivered at Place Unloaded) ra đời trong Incoterms 2020 để thay thế cho DAT (Delivered at Terminal)."
+      },
+      {
+        q: "Hai điều kiện Incoterms nào yêu cầu người bán phải bắt buộc có nghĩa vụ mua bảo hiểm hàng hóa cho người mua?",
+        options: ["FOB và CFR", "CIF và CIP", "CPT và CIP", "DAT và DAP"],
+        answer: 1,
+        exp: "CIF và CIP là 2 điều kiện bắt buộc người bán phải ký hợp đồng bảo hiểm và trả phí bảo hiểm để bảo vệ rủi ro cho người mua trong quá trình vận tải."
+      },
+      {
+        q: "Các điều kiện thương mại nào sau đây CHỈ áp dụng duy nhất cho phương thức vận tải biển và đường thủy nội địa?",
+        options: ["EXW, FCA, FAS, FOB", "FAS, FOB, CFR, CIF", "CPT, CIP, DAT, DAP", "FOB, CFR, CPT, CIP"],
+        answer: 1,
+        exp: "4 quy tắc dành riêng cho giao thông đường biển và đường thủy nội địa là FAS, FOB, CFR và CIF."
+      },
+      {
+        q: "Theo Incoterms 2010 và 2020, thời điểm rủi ro chuyển giao từ người bán sang người mua trong điều kiện FOB là khi nào?",
+        options: ["Khi hàng qua lan can tàu", "Khi hàng đã được xếp hoàn tất lên con tàu", "Khi tàu cập cảng dỡ hàng", "Khi người mua nhận được vận đơn"],
+        answer: 1,
+        exp: "Trong Incoterms 2010 và 2020, khái niệm lan can tàu bị bãi bỏ; rủi ro chuyển giao khi hàng hóa được xếp xong lên tàu ('placed on board')."
+      },
+      {
+        q: "Khái niệm Hợp đồng ngoại thương (Hợp đồng thương mại quốc tế) có đặc điểm nổi bật nhất về chủ thể là gì?",
+        options: ["Các bên có quốc tịch khác nhau", "Các bên có trụ sở kinh doanh đăng ký tại các quốc gia khác nhau", "Hàng hóa phải thanh toán bằng đồng USD", "Tất cả các đáp án trên"],
+        answer: 1,
+        exp: "Đặc điểm cơ bản của hợp đồng ngoại thương là các bên chủ thể có cơ sở kinh doanh đăng ký tại hai quốc gia khác nhau."
+      },
+      {
+        q: "Theo quy định pháp luật Việt Nam, hình thức bắt buộc của Hợp đồng mua bán hàng hóa quốc tế là gì?",
+        options: ["Bằng lời nói", "Bằng hình thức mặc nhiên", "Bằng văn bản (hoặc hình thức có giá trị pháp lý tương đương)", "Hình thức tùy chọn"],
+        answer: 2,
+        exp: "Điều kiện hiệu lực của hợp đồng ngoại thương tại Việt Nam bắt buộc hình thức hợp đồng phải là văn bản."
+      },
+      {
+        q: "Mặt hàng nào sau đây thuộc danh mục CẤM xuất khẩu của Việt Nam (theo Chương 5)?",
+        options: ["Gỗ tròn, gỗ xẻ", "Xăng dầu", "Thủy sản làm giống", "Thiết bị y tế"],
+        answer: 0,
+        exp: "Các mặt hàng cấm xuất khẩu gồm vũ khí, đồ cổ, chất độc, động thực vật quý hiếm, gỗ tròn, gỗ xẻ..."
+      },
+      {
+        q: "Trọng lượng thương mại ($G_{tm}$) được tính theo công thức nào từ Trọng lượng thực tế ($G_{tt}$), Độ ẩm thực tế ($W_{tt}$) và Độ ẩm tiêu chuẩn ($W_{tc}$)?",
+        options: [
+          "Gtm = Gtt * (100 + Wtt) / (100 + Wtc)",
+          "Gtm = Gtt * (100 + Wtc) / (100 + Wtt)",
+          "Gtm = Gtt * (100 - Wtc) / (100 - Wtt)",
+          "Gtm = Gtt * Wtc / Wtt"
+        ],
+        answer: 1,
+        exp: "Công thức chuẩn: Gtm = Gtt * (100 + Wtc) / (100 + Wtt)."
+      },
+      {
+        q: "Đơn vị đo lường 1 Long Ton (tấn dài) tương đương với bao nhiêu kg?",
+        options: ["1.000 kg", "907,184 kg", "1.016,047 kg", "2.204,6 kg"],
+        answer: 2,
+        exp: "1 Long Ton (LT) = 1.016,047 kg; 1 Short Ton (ST) = 907,184 kg; 1 Metric Ton (MT) = 1.000 kg."
+      },
+      {
+        q: "Khi quy định số lượng hàng hóa có khối lượng lớn như ngũ cốc, phân bón, các bên thường sử dụng các từ phỏng chừng như 'about', 'more or less'. Việc sử dụng cách này bắt buộc phải xác định yếu tố gì?",
+        options: ["Thời gian giao hàng", "Dung sai (tolerance)", "Địa điểm dỡ hàng", "Số lượng kiện"],
+        answer: 1,
+        exp: "Quy định số lượng phỏng chừng bắt buộc phải xác định mức dung sai (tolerance) và ai có quyền lựa chọn dung sai đó."
+      },
+      {
+        q: "Loại giá cả nào trong hợp đồng được áp dụng cho các mặt hàng có thời gian chế tạo, sản xuất lâu dài như tàu biển, thiết bị toàn bộ?",
+        options: ["Giá cố định", "Giá quy định sau", "Giá có thể xét lại", "Giá di động"],
+        answer: 3,
+        exp: "Giá di động vận dụng cho những hàng hóa có thời gian chế tạo lâu dài (thiết bị toàn bộ, tàu biển...)."
+      },
+      {
+        q: "Hình thức giảm giá nào mà tỷ lệ % giảm giá tăng dần theo số lượng hàng hóa được mua bán?",
+        options: ["Giảm giá đơn", "Giảm giá kép", "Giảm giá lũy tiến", "Giảm giá tặng thưởng"],
+        answer: 2,
+        exp: "Giảm giá lũy tiến là loại giảm giá có mức % giảm tăng dần tương ứng với số lượng mua bán tăng lên."
+      },
+      {
+        q: "Cách quy định thời hạn giao hàng 'Not later than 31 Dec 2026' thuộc nhóm quy định thời hạn giao hàng nào?",
+        options: ["Giao hàng không định kỳ", "Giao hàng ngay", "Giao hàng có định kỳ (ấn định ngày cuối cùng)", "Giao hàng phỏng chừng"],
+        answer: 2,
+        exp: "Đây là cách quy định thời hạn giao hàng có định kỳ, cụ thể là ấn định ngày cuối cùng phải hoàn thành nghĩa vụ giao hàng."
+      },
+      {
+        q: "Sự kiện nào sau đây được coi là 'Bất khả kháng' (Force Majeure) trong thực hiện hợp đồng?",
+        options: ["Máy móc nhà xưởng bị hư hỏng", "Cúp điện đột ngột", "Động đất, thiên tai lớn ngoài tầm kiểm soát", "Công nhân đình công nội bộ"],
+        answer: 2,
+        exp: "Bất khả kháng là sự kiện không thể lường trước, không thể vượt qua và xảy ra hoàn toàn do khách quan từ bên ngoài (như thiên tai, động đất, chiến tranh)."
+      },
+      {
+        q: "Phương thức đàm phán thương mại nào có đặc điểm 'thái độ ôn hòa đối với con người, cứng rắn đối với công việc'?",
+        options: ["Đàm phán kiểu mềm", "Đàm phán kiểu cứng", "Đàm phán kiểu nguyên tắc (Thuật đàm phán Harvard)", "Đàm phán qua điện thoại"],
+        answer: 2,
+        exp: "Đàm phán kiểu nguyên tắc (Principled negotiation - Harvard) tập trung tách rời con người khỏi vấn đề, ôn hòa với con người nhưng cứng rắn với mục tiêu công việc."
+      },
+      {
+        q: "Trong đàm phán trực tiếp, đoàn đàm phán chuẩn tiêu chuẩn nên hội tụ đầy đủ các chuyên gia ở 3 lĩnh vực nào?",
+        options: ["Chính trị, Kinh tế, Xã hội", "Pháp luật, Kỹ thuật, Thương mại", "Tài chính, Kế toán, Nhân sự", "Hải quan, Vận tải, Bảo hiểm"],
+        answer: 1,
+        exp: "Thành phần đoàn đàm phán trực tiếp cần hội đủ 3 lĩnh vực: Pháp luật, Kỹ thuật, và Thương mại (trong đó chuyên gia thương mại thường làm trưởng đoàn)."
+      },
+      {
+        q: "Trong nghiệp vụ thư tín thương mại, loại thư nào do người mua gửi cho người bán nhằm đề nghị cho biết giá cả và các điều kiện mua bán hàng hóa?",
+        options: ["Thư chào hàng (Offer)", "Thư hỏi hàng (Inquiry/Enquiry)", "Đơn đặt hàng (Order)", "Thư hoàn giá (Counter-Offer)"],
+        answer: 1,
+        exp: "Thư hỏi hàng (Letter of inquiry) do bên mua gửi cho bên bán để hỏi thông tin giá cả, sản phẩm và điều kiện giao dịch."
+      },
+      {
+        q: "Thư chào hàng cố định (Firm offer) có đặc điểm gì khác so với Thư chào hàng tự do (Free offer)?",
+        options: ["Không ấn định thời hạn hiệu lực", "Ấn định thời gian hiệu lực và ràng buộc trách nhiệm người chào hàng trong thời hạn đó", "Có thể gửi cho nhiều người cùng lúc", "Không có giá trị pháp lý"],
+        answer: 1,
+        exp: "Chào hàng cố định có nêu thời hạn hiệu lực và ràng buộc nghĩa vụ của người bán trong suốt thời hạn đó."
+      },
+      {
+        q: "Trong trình bày thư thương mại, hình thức 'Block form' (Dạng khối) có quy cách như thế nào?",
+        options: ["Mỗi đầu đoạn văn phải thụt vào 1 tab", "Xuống dòng không thụt đầu dòng, các đoạn cách nhau một dòng trắng", "Tất cả chữ viết hoa", "Không có khoảng cách giữa các đoạn"],
+        answer: 1,
+        exp: "Block form quy định không thụt đầu dòng khi xuống đoạn hoàn toàn, các đoạn văn được phân tách bằng 1 dòng trống."
+      },
+      {
+        q: "Phương pháp nghiên cứu thị trường bằng cách cử cán bộ trực tiếp đến thị trường mục tiêu quan sát kho bãi, cửa hàng được gọi là gì?",
+        options: ["Desk research (Nghiên cứu tại bàn)", "Field research (Nghiên cứu tại chỗ/thực địa)", "Nghiên cứu qua Internet", "Nghiên cứu sơ cấp"],
+        answer: 1,
+        exp: "Field research (nghiên cứu tại chỗ/thực địa) là trực tiếp khảo sát thị trường, cửa hàng, kho bãi tại nước bản địa."
+      },
+      {
+        q: "Phương thức thanh toán quốc tế nào mà người bán mở tài khoản (hoặc sổ) ghi nợ người mua và người mua trả tiền periodic theo thỏa thuận?",
+        options: ["Tín dụng chứng từ (L/C)", "Ghi sổ (Open Account)", "Nhờ thu kèm chứng từ (D/P)", "Chuyển tiền (T/T)"],
+        answer: 1,
+        exp: "Phương thức ghi sổ (Open Account): Bên bán giao hàng trước, mở sổ ghi nợ và bên mua định kỳ thanh toán tiền."
+      },
+      {
+        q: "Trong nghiệp vụ Buôn bán đối lưu (Counter trade), hình thức 'Barter' có đặc điểm gì?",
+        options: ["Thanh toán hoàn toàn bằng USD", "Hàng đổi hàng trực tiếp, không sử dụng tiền mặt trong thanh toán", "Nhận lại sản phẩm từ máy móc đầu tư", "Thanh toán qua ngân hàng mở L/C"],
+        answer: 1,
+        exp: "Nghiệp vụ Barter là hình thức hàng đổi hàng thuần túy, không sử dụng tiền trong giao dịch thanh toán."
+      },
+      {
+        q: "Phương thức Nhờ thu trơn (Clean Collection) khác với Nhờ thu kèm chứng từ ở điểm nào?",
+        options: ["Không có ngân hàng tham gia", "Bộ chứng từ nhờ thu gửi qua ngân hàng chỉ gồm hối phiếu/chứng từ tài chính, không kèm chứng từ thương mại", "Người mua trả tiền trước mới nhận hàng", "Ngân hàng cam kết trả tiền thay"],
+        answer: 1,
+        exp: "Nhờ thu trơn: Người bán gửi trực tiếp chứng từ thương mại cho người mua, chỉ gửi chứng từ tài chính (hối phiếu) qua ngân hàng để nhờ thu."
+      },
+      {
+        q: "Trong thanh toán Nhờ thu kèm chứng từ, ký hiệu D/P (Documents against Payment) nghĩa là gì?",
+        options: ["Giao chứng từ khi người mua chấp nhận hối phiếu", "Giao chứng từ khi người mua thanh toán tiền", "Giao chứng từ khi có thư cam kết", "Giao chứng từ khi nhận biên lai tín thác"],
+        answer: 1,
+        exp: "D/P (Delivery of Documents Against Payment) nghĩa là ngân hàng chỉ trao bộ chứng từ hàng hóa khi người mua đã thanh toán tiền."
+      },
+      {
+        q: "Ký hiệu D/A (Documents against Acceptance) trong nhờ thu có nghĩa là gì?",
+        options: ["Người mua phải trả tiền ngay để lấy chứng từ", "Người mua ký chấp nhận thanh toán hối phiếu trả chậm để lấy bộ chứng từ", "Người bán nhận lại hàng nếu người mua từ chối", "Ngân hàng mở L/C bảo lãnh"],
+        answer: 1,
+        exp: "D/A (Delivery of Documents Against Acceptance) cho phép người mua nhận bộ chứng từ sau khi đã ký chấp nhận trả tiền trên hối phiếu kỳ hạn."
+      },
+      {
+        q: "Hình thức chuyển tiền bằng điện báo trong phương thức Remittance được viết tắt là gì?",
+        options: ["M/T", "T/T", "CAD", "L/C"],
+        answer: 1,
+        exp: "T/T (Telegraphic Transfer) là hình thức chuyển tiền qua điện báo."
+      },
+      {
+        q: "Phương thức thanh toán CAD (Cash Against Documents) quy định người mua phải mở tài khoản gì tại ngân hàng?",
+        options: ["Tài khoản thanh toán thường", "Tài khoản tín thác (Trust Account)", "Tài khoản ký quỹ L/C", "Tài khoản vãng lai"],
+        answer: 1,
+        exp: "Trong phương thức CAD, người mua yêu cầu ngân hàng mở Tài khoản tín thác (Trust Account) để thanh toán cho người bán khi xuất trình đủ chứng từ."
+      },
+      {
+        q: "Hai nguyên tắc hoạt động cốt lõi và nghiêm ngặt nhất của phương thức Tín dụng chứng từ (L/C) là gì?",
+        options: ["Nhanh chóng và Tiết kiệm", "Bảo mật và Linh hoạt", "Độc lập và Tuân thủ nghiêm ngặt", "Tự do và Tự nguyện"],
+        answer: 2,
+        exp: "L/C hoạt động độc lập với hợp đồng mua bán và tuân thủ nguyên tắc kiểm tra tuân thủ nghiêm ngặt (Strict compliance) của bộ chứng từ."
+      },
+      {
+        q: "Trong phương thức L/C, ngân hàng phát hành (Issuing Bank) có nghĩa vụ cam kết trả tiền cho ai?",
+        options: ["Người mua (Nhà nhập khẩu)", "Người bán (Nhà xuất khẩu - Người hưởng lợi) khi xuất trình bộ chứng từ phù hợp", "Công ty bảo hiểm", "Hãng tàu"],
+        answer: 1,
+        exp: "Ngân hàng mở L/C cam kết trả tiền cho Người hưởng lợi (bên bán) nếu bên bán xuất trình bộ chứng từ hoàn toàn phù hợp với L/C."
+      },
+      {
+        q: "Loại L/C nào cho phép người bán (người hưởng lợi thứ nhất) chuyển nhượng một phần hoặc toàn bộ giá trị L/C cho người hưởng lợi thứ hai?",
+        options: ["Revocable L/C", "Back to Back L/C", "Transferable L/C (L/C chuyển nhượng)", "Confirmed L/C"],
+        answer: 2,
+        exp: "Transferable L/C (Thư tín dụng chuyển nhượng) cho phép chuyển quyền hưởng lợi L/C cho bên thứ ba."
+      },
+      {
+        q: "Trong quy trình thực hiện hợp đồng xuất khẩu, công việc đầu tiên bên xuất khẩu cần kiểm tra liên quan đến chính sách nhà nước là gì?",
+        options: ["Thuê tàu chở hàng", "Tìm hiểu quy định hiện hành về XNK và xin giấy phép xuất khẩu (nếu hàng thuộc diện xin phép)", "Mua bảo hiểm đường biển", "Lập hóa đơn thương mại"],
+        answer: 1,
+        exp: "Bước đầu tiên trong tổ chức thực hiện hợp đồng xuất khẩu là tìm hiểu chính sách quản lý XNK của Nhà nước và xin giấy phép xuất khẩu nếu mặt hàng yêu cầu."
+      },
+      {
+        q: "Khi kiểm tra chất lượng hàng hóa xuất khẩu tại cơ sở sản xuất trước khi vận chuyển ra cửa khẩu, việc kiểm tra do bộ phận nào thực hiện?",
+        options: ["Công ty giám định độc lập", "Cơ quan Hải quan cửa khẩu", "Bộ phận KCS (Kiểm tra chất lượng sản phẩm) của doanh nghiệp", "Cảng vụ"],
+        answer: 2,
+        exp: "Kiểm tra tại cơ sở sản xuất do KCS của doanh nghiệp tiến hành; còn kiểm tra tại cửa khẩu do tổ chức giám định thực hiện."
+      },
+      {
+        q: "Phương thức thuê tàu nào mà chủ tàu cho người thuê tàu thuê toàn bộ hoặc một phần con tàu để chở hàng từ một/vài cảng đến một/vài cảng khác theo hợp đồng chuyến?",
+        options: ["Thuê tàu chợ (Liner)", "Thuê tàu chuyến (Tramp)", "Thuê tàu định hạn (Time charter)", "Vận tải container"],
+        answer: 1,
+        exp: "Thuê tàu chuyến (Tramp) là chủ tàu cho thuê toàn bộ hoặc 1 phần con tàu để chở hàng theo chuyến (Voyage Charter Party)."
+      },
+      {
+        q: "Biên lai nào do thuyền phó cấp sau khi hàng hóa đã được xếp lên tàu để sau đó đổi lấy Vận đơn đường biển (Bill of Lading)?",
+        options: ["Delivery Order (D/O)", "Mate's Receipt (Biên lai thuyền phó)", "Cargo Outturn Report", "Packing List"],
+        answer: 1,
+        exp: "Sau khi bốc hàng lên tàu, chủ hàng nhận Biên lai thuyền phó (Mate's receipt) và dùng biên lai này đổi lấy Vận đơn đường biển (B/L)."
+      },
+      {
+        q: "Khi xuất khẩu hàng hóa đóng trong container nguyên khổ, ký hiệu chuyên môn gọi là gì?",
+        options: ["LCL (Less than a container load)", "FCL (Full container load)", "CY/CFS", "Bulk cargo"],
+        answer: 1,
+        exp: "FCL (Full Container Load) là hàng giao nguyên container; LCL (Less than a Container Load) là hàng lẻ ghép container."
+      },
+      {
+        q: "Theo thủ tục hải quan xuất khẩu, tờ khai hải quan hàng xuất khẩu/nhập khẩu trước đây thường ghi ký hiệu mẫu là gì?",
+        options: ["HQ-2002", "C/O Form D", "B/L No.1", "D/O Form"],
+        answer: 0,
+        exp: "Theo slide bài giảng Chương 6, tờ khai hải quan được đề cập là HQ-2002 (customs declaration)."
+      },
+      {
+        q: "Khi giao hàng xuất khẩu theo hợp đồng bảo hiểm bao (Open policy), sau khi xếp hàng lên tàu, chủ hàng cần gửi văn bản nào cho công ty bảo hiểm?",
+        options: ["Giấy yêu cầu bảo hiểm", "Giấy báo bắt đầu vận chuyển", "Hóa đơn thương mại", "Thư dự kháng"],
+        answer: 1,
+        exp: "Đối với hợp đồng bảo hiểm bao ký từ đầu năm, sau mỗi lần giao hàng xuống tàu, chủ hàng gửi 'Giấy báo bắt đầu vận chuyển'."
+      },
+      {
+        q: "Trong hợp đồng bảo hiểm chuyến (Voyage policy), văn bản nào là cơ sở để chủ hàng và công ty bảo hiểm đàm phán ký kết hợp đồng?",
+        options: ["Giấy báo bắt đầu vận chuyển", "Giấy yêu cầu bảo hiểm", "Vận đơn đường biển", "Tờ khai hải quan"],
+        answer: 1,
+        exp: "Hợp đồng bảo hiểm chuyến được giao kết dựa trên 'Giấy yêu cầu bảo hiểm' do chủ hàng lập gửi công ty bảo hiểm."
+      },
+      {
+        q: "Chứng từ nào sau đây vừa là biên nhận hàng hóa của người vận tải, vừa là hợp đồng vận tải, vừa là chứng từ sở hữu hàng hóa?",
+        options: ["Hóa đơn thương mại (Commercial Invoice)", "Bản kê chi tiết (Packing List)", "Vận đơn đường biển (Bill of Lading - B/L)", "Giấy chứng nhận xuất xứ (C/O)"],
+        answer: 2,
+        exp: "Vận đơn đường biển (B/L) có 3 chức năng cốt lõi: Biên nhận hàng hóa, Hợp đồng vận tải và Chứng từ sở hữu hàng hóa."
+      },
+      {
+        q: "Khi tàu chở hàng nhập khẩu cập cảng, chứng từ nào bên nhập khẩu phải mang đến đại lý hãng tàu để đổi lấy Lệnh giao hàng (D/O - Delivery Order)?",
+        options: ["Hóa đơn thương mại", "Vận đơn đường biển (B/L) bản gốc + Giấy giới thiệu", "Tờ khai hải quan", "Giấy chứng nhận xuất xứ"],
+        answer: 1,
+        exp: "Khi nhận Notice of Arrival, nhà nhập khẩu mang B/L bản gốc và Giấy giới thiệu đến đại lý hãng tàu để lấy Lệnh giao hàng (D/O)."
+      },
+      {
+        q: "Khi nhận hàng nhập khẩu nguyên container (FCL), nếu phát hiện niêm phong kẹp chì (seal) bị hư hỏng hoặc tổn thất, người nhập khẩu cần mời tổ chức nào lập biên bản giám định dưới tàu?",
+        options: ["Cơ quan Hải quan", "Công ty Giám định (Survey Reports)", "Công ty Bảo hiểm", "Bộ phận KCS"],
+        answer: 1,
+        exp: "Nếu hàng có tổn thất hoặc hư hỏng seal, cần mời công ty giám định lập Biên bản giám định dưới tàu (Survey Report)."
+      },
+      {
+        q: "Biên bản nào được lập với tàu khi phát hiện hàng hóa nhập khẩu bị dỡ ra trong tình trạng hư hỏng, đổ vỡ?",
+        options: ["Report on receipt of cargo", "Cargo Outturn Report (Biên bản hàng đổ vỡ hư hỏng)", "Letter of Reservation", "Notice of Arrival"],
+        answer: 1,
+        exp: "Nếu hàng bị đổ vỡ, hư hỏng phải lập 'Biên bản hàng đổ vỡ hư hỏng' (Cargo outturn report - COR)."
+      },
+      {
+        q: "Văn bản nào do nhà nhập khẩu lập gửi cho người vận tải ngay khi nghi ngờ hoặc phát hiện hàng hóa bị tổn thất tại cảng dỡ?",
+        options: ["Thư khiếu nại", "Thư dự kháng (Letter of reservation)", "Đơn bảo hiểm", "Giấy chứng nhận tổn thất"],
+        answer: 1,
+        exp: "Doanh nghiệp nhập khẩu phải lập Thư dự kháng (Letter of reservation) gửi cho tàu/hãng vận tải nếu nghi ngờ hoặc thấy hàng bị tổn thất."
+      },
+      {
+        q: "Chứng từ thương mại nào do người bán phát hành cho người mua để đòi thanh toán số tiền hàng hóa/dịch vụ đã cung cấp?",
+        options: ["Packing List", "Commercial Invoice (Hóa đơn thương mại)", "Bill of Lading", "Certificate of Origin"],
+        answer: 1,
+        exp: "Hóa đơn thương mại (Commercial Invoice) là chứng từ đòi tiền của người bán phát hành cho người mua."
+      },
+      {
+        q: "Mục đích chính của Bản kê chi tiết hàng hóa (Packing List) là gì?",
+        options: ["Xác định quyền sở hữu hàng hóa", "Khai báo trị giá tính thuế", "Bản kê khai chi tiết tất cả hàng hóa đóng trong từng kiện hàng để kiểm tra, đối chiếu thực tế", "Xác định xuất xứ ưu đãi thuế"],
+        answer: 2,
+        exp: "Packing List liệt kê chi tiết nội dung, trọng lượng, kích thước của từng kiện hàng để đối chiếu kiểm hàng thực tế."
+      },
+      {
+        q: "Giấy chứng nhận xuất xứ hàng hóa Form D (C/O Form D) áp dụng cho hàng hóa xuất nhập khẩu trong khu vực nào?",
+        options: ["Việt Nam - Hàn Quốc", "Các nước thành viên ASEAN", "Việt Nam - Trung Quốc", "Việt Nam - Nhật Bản"],
+        answer: 1,
+        exp: "C/O Form D áp dụng cho hàng hóa hưởng thuế quan ưu đãi trong hiệp định ASEAN (CEPT/ATIGA)."
+      },
+      {
+        q: "Tổ chức nào có thẩm quyền phát hành và công bố bộ quy tắc Incoterms?",
+        options: ["Tổ chức Thương mại Thế giới (WTO)", "Phòng Thương mại Quốc tế (ICC)", "Liên Hợp Quốc (UN)", "Hiệp hội Vận tải Hàng không (IATA)"],
+        answer: 1,
+        exp: "Incoterms là bộ quy tắc do Phòng Thương mại Quốc tế (ICC - International Chamber of Commerce) ban hành."
+      },
+      {
+        q: "Nội dung nào sau đây KHÔNG thuộc phạm vi điều chỉnh của Incoterms?",
+        options: ["Phân chia chi phí vận tải giữa người mua và người bán", "Địa điểm chuyển giao rủi ro về hàng hóa", "Nghĩa vụ làm thủ tục thông quan xuất/nhập khẩu", "Sự chuyển giao quyền sở hữu hàng hóa và vi phạm hợp đồng"],
+        answer: 3,
+        exp: "Incoterms KHÔNG điều chỉnh việc chuyển giao quyền sở hữu hàng hóa, quyền tài sản cũng như các vi phạm và hậu quả vi phạm hợp đồng."
+      }
+    ];
+
+    // State Variables
+    let currentQuestion = 0;
+    let userAnswers = new Array(quizData.length).fill(null);
+    let bookmarked = new Array(quizData.length).fill(false);
+    let isSubmitted = false;
+    let timerInterval = null;
+    let timeLeft = 60 * 60; // 60 minutes in seconds
+
+    // Initialize Quiz
+    window.onload = function() {
+      renderGrid();
+      loadQuestion(0);
+      startTimer();
+      updateStats();
+    };
+
+    // Timer Function
+    function startTimer() {
+      const timerEl = document.getElementById('timer');
+      timerInterval = setInterval(() => {
+        if (timeLeft <= 0) {
+          clearInterval(timerInterval);
+          alert('Đã hết thời gian 60 phút! Hệ thống sẽ tự động nộp bài.');
+          submitQuiz();
+          return;
+        }
+        timeLeft--;
+        const mins = Math.floor(timeLeft / 60);
+        const secs = timeLeft % 60;
+        timerEl.innerText = `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+      }, 1000);
+    }
+
+    // Render 50 Question Buttons Grid
+    function renderGrid() {
+      const grid = document.getElementById('questionsGrid');
+      grid.innerHTML = '';
+      for (let i = 0; i < quizData.length; i++) {
+        const btn = document.createElement('button');
+        btn.id = `grid-btn-${i}`;
+        btn.onclick = () => loadQuestion(i);
+        btn.className = getGridBtnClass(i);
+        btn.innerText = i + 1;
+        grid.appendChild(btn);
+      }
+    }
+
+    function getGridBtnClass(index) {
+      let base = "h-9 w-full rounded font-medium text-xs flex items-center justify-center transition border ";
+      
+      if (isSubmitted) {
+        if (userAnswers[index] === quizData[index].answer) {
+          return base + "bg-emerald-500 text-white border-emerald-600";
+        } else if (userAnswers[index] !== null) {
+          return base + "bg-rose-500 text-white border-rose-600";
+        } else {
+          return base + "bg-slate-200 text-slate-600 border-slate-300";
+        }
+      }
+
+      if (index === currentQuestion) {
+        base += "ring-2 ring-amber-400 ring-offset-1 ";
+      }
+
+      if (bookmarked[index]) {
+        return base + "bg-amber-400 text-slate-900 border-amber-500 font-bold";
+      }
+
+      if (userAnswers[index] !== null) {
+        return base + "bg-indigo-600 text-white border-indigo-700";
+      }
+
+      return base + "bg-slate-100 text-slate-700 hover:bg-slate-200 border-slate-300";
+    }
+
+    function updateGrid() {
+      for (let i = 0; i < quizData.length; i++) {
+        const btn = document.getElementById(`grid-btn-${i}`);
+        if (btn) btn.className = getGridBtnClass(i);
+      }
+    }
+
+    // Load Single Question
+    function loadQuestion(index) {
+      currentQuestion = index;
+      const q = quizData[index];
+
+      // Update Question Meta
+      document.getElementById('questionBadge').innerText = `Câu ${index + 1} / ${quizData.length}`;
+      document.getElementById('questionText').innerText = `${index + 1}. ${q.q}`;
+
+      // Update Bookmark button state
+      const bmBtn = document.getElementById('btnBookmark');
+      if (bookmarked[index]) {
+        bmBtn.className = "text-amber-500 font-semibold text-sm flex items-center gap-1 transition px-2 py-1 rounded bg-amber-50";
+        bmBtn.innerHTML = `<i class="fa-solid fa-bookmark"></i> <span>Đã đánh dấu</span>`;
+      } else {
+        bmBtn.className = "text-slate-400 hover:text-amber-500 text-sm font-medium flex items-center gap-1 transition px-2 py-1 rounded";
+        bmBtn.innerHTML = `<i class="fa-regular fa-bookmark"></i> <span>Xem lại sau</span>`;
+      }
+
+      // Render Options
+      const container = document.getElementById('optionsContainer');
+      container.innerHTML = '';
+
+      q.options.forEach((opt, optIdx) => {
+        const optionDiv = document.createElement('div');
+        let optClass = "p-4 rounded-xl border-2 flex items-start cursor-pointer transition ";
+
+        if (isSubmitted) {
+          if (optIdx === q.answer) {
+            optClass += "border-emerald-500 bg-emerald-50 text-emerald-900 font-medium";
+          } else if (userAnswers[index] === optIdx) {
+            optClass += "border-rose-500 bg-rose-50 text-rose-900";
+          } else {
+            optClass += "border-slate-200 bg-white opacity-60";
+          }
+        } else {
+          if (userAnswers[index] === optIdx) {
+            optClass += "border-indigo-600 bg-indigo-50/70 text-indigo-950 font-medium shadow-sm";
+          } else {
+            optClass += "border-slate-200 bg-white hover:border-indigo-300 hover:bg-slate-50 text-slate-800";
+          }
+        }
+
+        optionDiv.className = optClass;
+        if (!isSubmitted) {
+          optionDiv.onclick = () => selectOption(optIdx);
+        }
+
+        const letters = ['A', 'B', 'C', 'D'];
+        optionDiv.innerHTML = `
+          <span class="w-7 h-7 rounded-full bg-slate-100 text-slate-700 font-bold text-xs flex items-center justify-center mr-3 mt-0.5 shrink-0 border border-slate-300">
+            ${letters[optIdx]}
+          </span>
+          <span class="text-base leading-relaxed">${opt}</span>
+        `;
+        container.appendChild(optionDiv);
+      });
+
+      // Explanation Box
+      const expBox = document.getElementById('explanationBox');
+      if (isSubmitted) {
+        expBox.classList.remove('hidden');
+        document.getElementById('explanationText').innerText = q.exp;
+        const titleEl = document.getElementById('explanationTitle');
+        if (userAnswers[index] === q.answer) {
+          titleEl.className = "font-bold text-sm mb-1 text-emerald-700 flex items-center gap-2";
+          titleEl.innerHTML = `<i class="fa-solid fa-circle-check"></i> Trả lời đúng!`;
+        } else {
+          titleEl.className = "font-bold text-sm mb-1 text-rose-700 flex items-center gap-2";
+          titleEl.innerHTML = `<i class="fa-solid fa-circle-xmark"></i> Trả lời chưa chính xác`;
+        }
+      } else {
+        expBox.classList.add('hidden');
+      }
+
+      // Update Prev/Next Nav Buttons
+      document.getElementById('btnPrev').disabled = index === 0;
+      document.getElementById('btnNext').disabled = index === quizData.length - 1;
+      document.getElementById('btnPrev').style.opacity = index === 0 ? "0.5" : "1";
+      document.getElementById('btnNext').style.opacity = index === quizData.length - 1 ? "0.5" : "1";
+
+      updateGrid();
+    }
+
+    // Select Option
+    function selectOption(optIndex) {
+      if (isSubmitted) return;
+      userAnswers[currentQuestion] = optIndex;
+      loadQuestion(currentQuestion);
+      updateStats();
+    }
+
+    // Bookmark Toggle
+    function toggleBookmark() {
+      bookmarked[currentQuestion] = !bookmarked[currentQuestion];
+      loadQuestion(currentQuestion);
+    }
+
+    // Navigate Questions
+    function navigateQuestion(direction) {
+      const newIdx = currentQuestion + direction;
+      if (newIdx >= 0 && newIdx < quizData.length) {
+        loadQuestion(newIdx);
+      }
+    }
+
+    // Update Statistics
+    function updateStats() {
+      const answeredCount = userAnswers.filter(a => a !== null).length;
+      document.getElementById('statAnswered').innerText = answeredCount;
+      document.getElementById('statRemaining').innerText = quizData.length - answeredCount;
+    }
+
+    // Submit Modal Triggers
+    function confirmSubmit() {
+      if (isSubmitted) return;
+      const answeredCount = userAnswers.filter(a => a !== null).length;
+      document.getElementById('modalAnswerCount').innerText = `Bạn đã hoàn thành ${answeredCount} / ${quizData.length} câu.`;
+      document.getElementById('submitModal').classList.remove('hidden');
+    }
+
+    function closeSubmitModal() {
+      document.getElementById('submitModal').classList.add('hidden');
+    }
+
+    // Final Quiz Submission
+    function submitQuiz() {
+      isSubmitted = true;
+      clearInterval(timerInterval);
+      closeSubmitModal();
+
+      // Calculate Score
+      let score = 0;
+      userAnswers.forEach((ans, idx) => {
+        if (ans === quizData[idx].answer) {
+          score++;
+        }
+      });
+
+      // Show Result Card & Update Controls
+      document.getElementById('resultScoreCard').classList.remove('hidden');
+      document.getElementById('finalScore').innerText = `${score} / ${quizData.length}`;
+      document.getElementById('btnSubmitTop').innerText = "Đã nộp bài";
+      document.getElementById('btnSubmitTop').disabled = true;
+      document.getElementById('btnSubmitTop').className = "bg-slate-500 text-white font-semibold px-4 py-1.5 rounded-lg text-sm cursor-not-allowed opacity-75";
+      document.getElementById('btnSubmitBottom').innerText = "Xem lại chi tiết đáp án";
+      document.getElementById('btnSubmitBottom').disabled = true;
+
+      // Reload Current Question to Show Explanation & Correct Answer
+      loadQuestion(currentQuestion);
+    }
+  </script>
+</body>
+</html>
+</file>
+</canvas>
